@@ -70,6 +70,11 @@ trait WithResourceLock
         );
     }
 
+    public function getReturnUrlResourceLock(): string
+    {
+        return $this->indexPageUrl();
+    }
+    
     protected function afterUpdated(Model $item): Model
     {
         $this->modelLock->unlock();
