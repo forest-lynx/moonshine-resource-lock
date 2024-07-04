@@ -26,7 +26,10 @@ trait WithResourceLock
 
     protected function handleIndexPage(): void
     {
-        if ($this->isNowOnIndex()) {
+        if (
+            $this->isNowOnIndex()
+            && config('resource-lock.resource_lock_to_index_page')
+        ) {
             tap(
                 $this->indexPage()->getComponents(),
                 function (PageComponents $components) {
@@ -44,15 +47,17 @@ trait WithResourceLock
     {
         if ($component instanceof Fragment && $component->componentName === 'crud-list') {
             $component->getFields()->each(
-                function (TableBuilder $form) {
-                    $form->fields([
-                        ...$form->getFields(),
+                function ($index) {
+                    if ($index instanceof TableBuilder) {
+                        $index->fields([
+                        ...$index->getFields(),
                         Preview::make(
                             label: __('resource-lock::ui.table_title'),
                             column: 'resourceLock.id',
                             formatted: fn($item): bool => !ModelRelatedLock::make($item)->isLocked()
                         )->boolean()
-                    ]);
+                        ]);
+                    }
                 }
             );
         }
