@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'table_title' => 'Editing',
     'lock_resource_title' => 'Locked resources',
     'owner' => 'User',
     'lockable_type' => 'Locked model',

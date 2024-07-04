@@ -4,40 +4,95 @@ declare(strict_types=1);
 
 namespace ForestLynx\MoonShine\Traits;
 
-use MoonShine\Enums\Layer;
-use MoonShine\Enums\PageType;
 use MoonShine\Fields\Preview;
 use MoonShine\Decorations\Flex;
+use MoonShine\Decorations\Fragment;
 use MoonShine\Pages\PageComponents;
+use MoonShine\Components\TableBuilder;
+use Illuminate\Database\Eloquent\Model;
 use MoonShine\ActionButtons\ActionButton;
 use ForestLynx\MoonShine\Components\Modal;
 use ForestLynx\MoonShine\Services\ModelRelatedLock;
-use Illuminate\Database\Eloquent\Model;
 
 trait WithResourceLock
 {
-    protected ModelRelatedLock $modelLock;
+    protected ?ModelRelatedLock $modelLock = null;
 
     protected function bootWithResourceLock(): void
     {
-        //TODO добавить проверку на форму редактирования после обновы moonshine
-        //TODO добавить обработку индексной с добавлением информации о блокировке
-        //TODO реализовать отслеживание DOM на предмет удаления модального окна
-        //TODO подумать о реализации блокировки при редактировании в модальном окне
-        $item = $this->getItem();
-        if ($item) {
-            $this->modelLock = ModelRelatedLock::make($item);
-            if ($this->modelLock->isLocked()) {
-                $this->getPages()
-                    ->findByUri(PageType::FORM->value)
-                    ->pushToLayer(
-                        layer: Layer::BOTTOM,
-                        component: $this->getModal(),
+        $this->handleIndexPage();
+        $this->handleUpdateForm();
+    }
+
+    protected function handleIndexPage(): void
+    {
+        if ($this->isNowOnIndex()) {
+            tap(
+                $this->indexPage()->getComponents(),
+                function (PageComponents $components) {
+                    $components->map(
+                        function ($component) {
+                            $this->addResourceLockColumnToTable($component);
+                        }
                     );
-            }
-            if (!$this->modelLock->isResourceLock()) {
-                $this->modelLock->lock();
-            }
+                }
+            );
+        }
+    }
+
+    protected function addResourceLockColumnToTable($component): void
+    {
+        if ($component instanceof Fragment && $component->componentName === 'crud-list') {
+            $component->getFields()->each(
+                function (TableBuilder $form) {
+                    $form->fields([
+                        ...$form->getFields(),
+                        Preview::make(
+                            label: __('resource-lock::ui.table_title'),
+                            column: 'resourceLock.id',
+                            formatted: fn($item): bool => !ModelRelatedLock::make($item)->isLocked()
+                        )->boolean()
+                    ]);
+                }
+            );
+        }
+    }
+
+    protected function handleUpdateForm(): void
+    {
+        if ($this->isNowOnUpdateForm()) {
+            $this->modelLock = ModelRelatedLock::make($this->getItem());
+            $this->handleLockedResource();
+            $this->handleUnlockedResource();
+        }
+    }
+
+    protected function handleLockedResource(): void
+    {
+        if ($this->modelLock->isLocked()) {
+            tap(
+                $this->formPage()->getComponents(),
+                function (PageComponents $components) {
+                    $components->map(function ($component) {
+                        if ($component instanceof Fragment && $component->componentName === 'crud-form') {
+                            $fields = $this->isEditInModal()
+                                ? [$this->getPreview()->badge('red')]
+                                : [
+                                    ...$component->getFields(),
+                                    $this->getModal()
+                                ];
+                            $component->fields($fields);
+                        }
+                    });
+                }
+            );
+        }
+    }
+
+    protected function handleUnlockedResource(): void
+    {
+        if (!$this->modelLock->isResourceLock()) {
+            $this->modelLock->lock();
         }
     }
 
@@ -45,21 +100,16 @@ trait WithResourceLock
     {
         if (config('resource-lock.show_owner_modal')) {
             return app(config('resource-lock.resource_lock_owner'))
-                ->execute($this->modelLock->getResourceLockOwner());
+            ->execute($this->modelLock->getResourceLockOwner());
         }
     }
 
     protected function getModal(): Modal
     {
-        $content = config('resource-lock.show_owner_modal')
-            ? "{$this->getResourceLockOwner()} " . __('resource-lock::ui.locked_notice_user')
-            : __('resource-lock::ui.locked_notice');
         return Modal::make(
             title: static fn () => __('resource-lock::ui.title'),
             components: PageComponents::make([
-                Preview::make(
-                    formatted: static fn(): string => $content
-                )->customAttributes(['class' => 'mb-4']),
+                $this->getPreview(),
                 Flex::make([
                     ActionButton::make(
                         label: __('resource-lock::ui.back_btn'),
@@ -67,14 +117,24 @@ trait WithResourceLock
                     )->info()->icon('heroicons.outline.arrow-uturn-left')
                 ])->justifyAlign('start')->itemsAlign('start')
             ])
-        );
+        )->name('resource-lock-modal');
+    }
+
+    protected function getPreview(): Preview
+    {
+        $content = config('resource-lock.show_owner_modal')
+            ? "{$this->getResourceLockOwner()} " . __('resource-lock::ui.locked_notice_user')
+            : __('resource-lock::ui.locked_notice');
+        return Preview::make(
+            formatted: static fn(): string => $content
+        )->customAttributes(['class' => 'mb-4']);
     }
 
     public function getReturnUrlResourceLock(): string
     {
         return $this->indexPageUrl();
     }
-    
+
     protected function afterUpdated(Model $item): Model
     {
         $this->modelLock->unlock();
