@@ -95,6 +95,7 @@ class CustomActions extends ResourceLockOwnerAction
 
 На индексной странице ресурса по умолчанию отображается информация о том, что доступ к ресурсу был заблокирован другим пользователем. Это отображается в виде специального значка:
 ![preview](./screenshots/indexInfo.png)
+
 Чтобы управлять этим поведением, можно изменить параметр `resource_lock_to_index_page` в файле конфигурации `config/resource-lock.php`.
 
 > [!CAUTION]
