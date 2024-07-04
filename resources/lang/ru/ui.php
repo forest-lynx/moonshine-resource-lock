@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'table_title' => 'Редактирование',
     'lock_resource_title' => 'Заблокированные ресурсы',
     'owner' => 'Пользователь',
     'lockable_type' => 'Заблокированная модель',
