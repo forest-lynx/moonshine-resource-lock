@@ -27,6 +27,10 @@ final class ResourceLockServiceProvider extends ServiceProvider
         $this->loadTranslationsFrom(__DIR__ . '/../../resources/lang', 'resource-lock');
 
         $this->publishes([
+            __DIR__ . '/../../resources/lang' => $this->app->langPath('vendor/resource-lock'),
+        ], 'resource-lock-lang');
+
+        $this->publishes([
             __DIR__ . '/../../config/resource-lock.php' => config_path('resource-lock.php'),
         ], 'resource-lock-config');
 

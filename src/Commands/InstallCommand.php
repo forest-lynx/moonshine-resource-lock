@@ -32,6 +32,18 @@ class InstallCommand extends Command
                 '--tag' => 'resource-lock-config'
             ]);
         }
+
+        $publishLangFile = confirm(
+            label: 'Do you want to publish a language file?',
+            default: false
+        );
+
+        if ($publishLangFile) {
+            $this->call('vendor:publish', [
+                '--tag' => 'resource-lock-lang'
+            ]);
+        }
+
         info('resource-lock package installed successfully.');
 
         return self::SUCCESS;
