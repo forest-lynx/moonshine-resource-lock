@@ -103,6 +103,7 @@ class CustomActions extends ResourceLockOwnerAction
 
 ## Отображение всех блокировок
 В этом пакете можно настроить отображение всех заблокированных ресурсов. 
+
 ![preview](./screenshots/lockResource.png)
 
 Название ресурса для использования в меню административной панели MoonShine: 
