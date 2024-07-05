@@ -16,89 +16,80 @@ use ForestLynx\MoonShine\Services\ModelRelatedLock;
 
 trait WithResourceLock
 {
+    //TODO контроль при редактировании в таблице в режиме updateOnPreview()
+    //TODO поддержка карточек товара на индексной странице
     protected ?ModelRelatedLock $modelLock = null;
 
     protected function bootWithResourceLock(): void
-    {
-        $this->handleIndexPage();
-        $this->handleUpdateForm();
-    }
-
-    protected function handleIndexPage(): void
     {
         if (
             $this->isNowOnIndex()
             && config('resource-lock.resource_lock_to_index_page')
         ) {
-            tap(
-                $this->indexPage()->getComponents(),
-                function (PageComponents $components) {
-                    $components->map(
-                        function ($component) {
-                            $this->addResourceLockColumnToTable($component);
-                        }
-                    );
-                }
-            );
+            $this->handleIndexPage();
         }
+        if ($this->isNowOnUpdateForm()) {
+            $this->handleUpdateForm();
+        }
+    }
+
+    protected function handleIndexPage(): void
+    {
+        $this->indexPage()
+        ->getComponents()
+        ->map(
+            function ($component) {
+                if ($component instanceof Fragment && $component->componentName === 'crud-list') {
+                    $this->addResourceLockColumnToTable($component);
+                }
+            }
+        );
     }
 
     protected function addResourceLockColumnToTable($component): void
     {
-        if ($component instanceof Fragment && $component->componentName === 'crud-list') {
-            $component->getFields()->each(
-                function ($index) {
-                    if ($index instanceof TableBuilder) {
-                        $index->fields([
+        $component->getFields()->each(
+            function ($index) {
+                if ($index instanceof TableBuilder) {
+                    $index->fields([
                         ...$index->getFields(),
                         Preview::make(
                             label: __('resource-lock::ui.table_title'),
                             column: 'resourceLock.id',
                             formatted: fn($item): bool => !ModelRelatedLock::make($item)->isLocked()
                         )->boolean()
-                        ]);
-                    }
+                    ]);
                 }
-            );
-        }
+            }
+        );
     }
 
     protected function handleUpdateForm(): void
     {
-        if ($this->isNowOnUpdateForm()) {
-            $this->modelLock = ModelRelatedLock::make($this->getItem());
+        $this->modelLock = ModelRelatedLock::make($this->getItem());
+        if ($this->modelLock->isLocked()) {
             $this->handleLockedResource();
-            $this->handleUnlockedResource();
+        }
+        if (!$this->modelLock->isResourceLock()) {
+            $this->modelLock->lock();
         }
     }
 
     protected function handleLockedResource(): void
     {
-        if ($this->modelLock->isLocked()) {
-            tap(
-                $this->formPage()->getComponents(),
-                function (PageComponents $components) {
-                    $components->map(function ($component) {
-                        if ($component instanceof Fragment && $component->componentName === 'crud-form') {
-                            $fields = $this->isEditInModal()
-                                ? [$this->getPreview()->badge('red')]
-                                : [
-                                    ...$component->getFields(),
-                                    $this->getModal()
-                                ];
-                            $component->fields($fields);
-                        }
-                    });
+        $this->formPage()
+            ->getComponents()
+            ->map(function ($component) {
+                if ($component instanceof Fragment && $component->componentName === 'crud-form') {
+                    $fields = $this->isEditInModal()
+                        ? [$this->getPreview()->badge('red')]
+                        : [
+                            ...$component->getFields(),
+                            $this->getModal()
+                        ];
+                    $component->fields($fields);
                 }
-            );
-        }
-    }
-
-    protected function handleUnlockedResource(): void
-    {
-        if (!$this->modelLock->isResourceLock()) {
-            $this->modelLock->lock();
-        }
+            });
     }
 
     protected function getResourceLockOwner(): ?string
@@ -111,9 +102,9 @@ trait WithResourceLock
 
     protected function getModal(): Modal
     {
-        return Modal::make(
-            title: static fn () => __('resource-lock::ui.title'),
-            components: PageComponents::make([
+            return Modal::make(
+                title: static fn () => __('resource-lock::ui.title'),
+                components: PageComponents::make([
                 $this->getPreview(),
                 Flex::make([
                     ActionButton::make(
@@ -121,28 +112,28 @@ trait WithResourceLock
                         url: $this->getReturnUrlResourceLock(),
                     )->info()->icon('heroicons.outline.arrow-uturn-left')
                 ])->justifyAlign('start')->itemsAlign('start')
-            ])
-        )->name('resource-lock-modal');
+                ])
+            )->name('resource-lock-modal');
     }
 
     protected function getPreview(): Preview
     {
-        $content = config('resource-lock.show_owner_modal')
+            $content = config('resource-lock.show_owner_modal')
             ? "{$this->getResourceLockOwner()} " . __('resource-lock::ui.locked_notice_user')
             : __('resource-lock::ui.locked_notice');
-        return Preview::make(
-            formatted: static fn(): string => $content
-        )->customAttributes(['class' => 'mb-4']);
+            return Preview::make(
+                formatted: static fn(): string => $content
+            )->customAttributes(['class' => 'mb-4']);
     }
 
     public function getReturnUrlResourceLock(): string
     {
-        return $this->indexPageUrl();
+            return $this->indexPageUrl();
     }
 
     protected function afterUpdated(Model $item): Model
     {
-        $this->modelLock->unlock();
-        return parent::afterUpdated($item);
+            $this->modelLock->unlock();
+            return parent::afterUpdated($item);
     }
 }
