@@ -43,7 +43,6 @@ class PostResource extends ModelResource
 //...
 ```
 Теперь Ваш ресурс может быть заблокирован.
-
 ## Конфигурация
 
 ![preview](./screenshots/lock.png)
@@ -114,6 +113,12 @@ class CustomActions extends ResourceLockOwnerAction
 
 Чтобы узнать больше о доступных вариантах отображения, обратитесь к документации административной панели [MoonShine](https://moonshine-laravel.com/docs/resource/menu/menu)
 
+##### Очистка от устаревших записей о блокировке ресурсов
+Для очистки таблицы базы данных от всех устаревших записей о блокировке ресурсов запустите команду:
+
+```bash
+php artisan resource-lock:clear-old
+```
 ## Публикация конфигурации и языковых файлов
 Чтобы опубликовать конфигурационный файл запустите команду:
 ```bash
@@ -130,6 +135,6 @@ php artisan vendor:publish --tag=resource-lock-lang
 
 
 [ico-license]: https://img.shields.io/badge/license-MIT-brightgreen.svg
-[ico-laravel]: https://img.shields.io/badge/Laravel-10+-FF2D20?style=for-the-badge&logo=laravel
-[ico-php]: https://img.shields.io/badge/PHP-8.1+-777BB4?style=for-the-badge&logo=php
+[ico-laravel]: https://img.shields.io/badge/Laravel-11+-FF2D20?style=for-the-badge&logo=laravel
+[ico-php]: https://img.shields.io/badge/PHP-8.2+-777BB4?style=for-the-badge&logo=php
 
