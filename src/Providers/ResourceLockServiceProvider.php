@@ -4,17 +4,15 @@ declare(strict_types=1);
 
 namespace ForestLynx\MoonShine\Providers;
 
-use ForestLynx\MoonShine\Commands\InstallCommand;
-use ForestLynx\MoonShine\Models\ResourceLock;
-use ForestLynx\MoonShine\Observers\ModelObserver;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Support\ServiceProvider;
+use ForestLynx\MoonShine\Commands\InstallCommand;
+use ForestLynx\MoonShine\Commands\ClearOldLocking;
 
 final class ResourceLockServiceProvider extends ServiceProvider
 {
     protected array $commands = [
-        InstallCommand::class
+        InstallCommand::class,
+        ClearOldLocking::class
     ];
 
     //TODO реализовать очистку устаревших блокировок

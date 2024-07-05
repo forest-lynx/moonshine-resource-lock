@@ -11,7 +11,7 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use function Laravel\Prompts\{intro, form, info, text, confirm, error, select};
 
 #[AsCommand(name: 'resource-lock:clear-old')]
-class InstallCommand extends Command
+class ClearOldLocking extends Command
 {
     protected $signature = 'resource-lock:clear-old';
 
