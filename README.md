@@ -66,8 +66,10 @@ class PostResource extends ModelResource
 В модальном окне отображается только имя пользователя, заблокировавшего доступ к ресурсу. Для отображения иной информации вы можете создать свой класс, который будет унаследован от `ResourceLockOwnerAction`, и зарегистрировать его в конфигурационном файле. Таким образом, вы сможете настроить отображение дополнительных сведений о заблокировавшем доступ пользователе в модальном окне.
 Например:
 ```php
+<?php
+
 namespace App\Actions;
-//...
+
 use ForestLynx\ResourceLock\Actions\ResourceLockOwnerAction;
 
 class CustomActions extends ResourceLockOwnerAction
@@ -91,18 +93,43 @@ class CustomActions extends ResourceLockOwnerAction
 По умолчанию, когда вы нажимаете кнопку «Назад» в модальном окне заблокированного ресурса, происходит переход на индексную страницу ресурса. Однако вы можете изменить URL страницы редиректа, переопределив метод `getReturnUrlResourceLock` в вашем ресурсе.
 
 ```php
-    public function getReturnUrlResourceLock(): string
+<?php
+//...
+class PostResource extends ModelResource
+{
+    //...
+    use WithResourceLock;
+    //...
+    protected function getReturnUrlResourceLock(): string
     {
         return 'https://...';
     }
+    //...
+}
 ```
 ##### Отображение информации о заблокированном ресурсе на индексной странице
 
 На индексной странице ресурса по умолчанию отображается информация о том, что доступ к ресурсу был заблокирован другим пользователем. Это отображается в виде специального значка:
 ![preview](./screenshots/indexInfo.png)
 
-Чтобы управлять этим поведением, можно изменить параметр `resource_lock_to_index_page` в файле конфигурации `config/resource-lock.php`.
-
+Чтобы скрыть эту информацию на индексной странице ресурса, можно в конфигурационном файле установить для параметра `resource_lock_to_index_page` значение `false`.
+В зависимости от ваших потребностей, вы можете настроить отображение информации о заблокированном ресурсе на индексной странице ресурса с помощью объявления метода в вашем ресурсе `isDisplayOnIndexPage()`. Этот метод должен возвращать логическое значение `true` или `false`.
+Например:
+```php
+<?php
+//...
+class PostResource extends ModelResource
+{
+    //...
+    use WithResourceLock;
+    //...
+    public function isDisplayOnIndexPage(): bool
+    {
+        return false;
+    }
+    //...
+}
+```
 > [!CAUTION]
 > Пока это работает только для ресурсов с отображением через `TableBuilder`.
 
