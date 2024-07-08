@@ -62,6 +62,8 @@ The modal window displays only the name of the user who blocked access to the re
 For example:
 
 ```php
+<?php
+
 namespace App\Actions;
 //...
 use ForestLynx\ResourceLock\Actions\ResourceLockOwnerAction;
@@ -88,10 +90,19 @@ Then add it to the configuration file:
 By default, when you click the Back button in the modal window of a blocked resource, you are redirected to the index page of the resource. However, you can change the URL of the redirect page by overriding the `getReturnUrlResourceLock` method in your resource.
 
 ```php
-    public function getReturnUrlResourceLock(): string
+<?php
+//...
+class PostResource extends ModelResource
+{
+    //...
+    use WithResourceLock;
+    //...
+    protected function getReturnUrlResourceLock(): string
     {
         return 'https://...';
     }
+    //...
+}
 ```
 ##### Displaying information about a blocked resource on an index page
 
@@ -99,8 +110,24 @@ By default, the index page of the resource displays information that access to t
 
 ![preview](../screenshots/indexInfo.png)
 
-To control this behavior, you can change the `resource_lock_to_index_page` parameter in the configuration file `config/resource-lock.php `.
-
+To hide this information on the index page of a resource, you can set the `resource_lock_to_index_page` parameter to `false` in the configuration file.
+Depending on your needs, you can configure the display of information about the blocked resource on the index page of the resource by declaring the method in your resource `isDisplayOnIndexPage()'. This method should return a boolean value of `true` or `false'.
+Example:
+```php
+<?php
+//...
+class PostResource extends ModelResource
+{
+    //...
+    use WithResourceLock;
+    //...
+    public function isDisplayOnIndexPage(): bool
+    {
+        return false;
+    }
+    //...
+}
+```
 > [!CAUTION]
 > So far, this only works for resources with display via 'TableBuilder'.
 
