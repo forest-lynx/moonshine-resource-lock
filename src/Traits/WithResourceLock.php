@@ -24,7 +24,7 @@ trait WithResourceLock
     {
         if (
             $this->isNowOnIndex()
-            && config('resource-lock.resource_lock_to_index_page')
+            && $this->isDisplayOnIndexPage()
         ) {
             $this->handleIndexPage();
         }
@@ -102,38 +102,44 @@ trait WithResourceLock
 
     protected function getModal(): Modal
     {
-            return Modal::make(
-                title: static fn () => __('resource-lock::ui.title'),
-                components: PageComponents::make([
-                $this->getPreview(),
-                Flex::make([
-                    ActionButton::make(
-                        label: __('resource-lock::ui.back_btn'),
-                        url: $this->getReturnUrlResourceLock(),
-                    )->info()->icon('heroicons.outline.arrow-uturn-left')
-                ])->justifyAlign('start')->itemsAlign('start')
-                ])
-            )->name('resource-lock-modal');
+        return Modal::make(
+            title: static fn () => __('resource-lock::ui.title'),
+            components: PageComponents::make([
+            $this->getPreview(),
+            Flex::make([
+                ActionButton::make(
+                    label: __('resource-lock::ui.back_btn'),
+                    url: $this->getReturnUrlResourceLock(),
+                )->info()->icon('heroicons.outline.arrow-uturn-left')
+            ])->justifyAlign('start')->itemsAlign('start')
+            ])
+        )->name('resource-lock-modal');
     }
 
     protected function getPreview(): Preview
     {
-            $content = config('resource-lock.show_owner_modal')
-            ? "{$this->getResourceLockOwner()} " . __('resource-lock::ui.locked_notice_user')
-            : __('resource-lock::ui.locked_notice');
-            return Preview::make(
-                formatted: static fn(): string => $content
-            )->customAttributes(['class' => 'mb-4']);
-    }
-
-    public function getReturnUrlResourceLock(): string
-    {
-            return $this->indexPageUrl();
+        $content = config('resource-lock.show_owner_modal')
+        ? "{$this->getResourceLockOwner()} " . __('resource-lock::ui.locked_notice_user')
+        : __('resource-lock::ui.locked_notice');
+        return Preview::make(
+            formatted: static fn(): string => $content
+        )->customAttributes(['class' => 'mb-4']);
     }
 
     protected function afterUpdated(Model $item): Model
     {
-            $this->modelLock->unlock();
-            return parent::afterUpdated($item);
+        $this->modelLock->unlock();
+        return parent::afterUpdated($item);
+    }
+
+    protected function getReturnUrlResourceLock(): string
+    {
+        return $this->indexPageUrl();
+    }
+
+    protected function isDisplayOnIndexPage(): bool
+    {
+        $config = config('resource-lock.resource_lock_to_index_page') ?? null;
+        return isset($config) ? $config : true;
     }
 }

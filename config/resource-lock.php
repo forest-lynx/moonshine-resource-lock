@@ -20,8 +20,4 @@ return [
     */
     'resource_lock_owner' => \ForestLynx\MoonShine\Actions\ResourceLockOwnerAction::class,
 
-    /**
-     * Displaying information about resource blocking on the index page
-     */
-    'resource_lock_to_index_page' => true,
 ];
