@@ -3,7 +3,7 @@
 
 [![Latest Stable Version](https://img.shields.io/packagist/v/forest-lynx/moonshine-resource-lock)](https://github.com/forest-lynx/moonshine-resource-lock)
 [![Total Downloads](https://img.shields.io/packagist/dt/forest-lynx/moonshine-resource-lock)](https://github.com/forest-lynx/moonshine-resource-lock) 
-[![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](LICENSE)
+[![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](LICENSE)\
 [![Laravel](https://img.shields.io/badge/Laravel-11+-FF2D20?style=for-the-badge&logo=laravel)](Laravel) 
 [![PHP](https://img.shields.io/badge/PHP-8.2+-777BB4?style=for-the-badge&logo=php)](PHP) 
 [![PHP](https://img.shields.io/badge/Moonshine-2.18+-1B253B?style=for-the-badge)](https://github.com/moonshine-software/moonshine) 
