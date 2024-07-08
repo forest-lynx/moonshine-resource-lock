@@ -46,7 +46,7 @@ class PostResource extends ModelResource
 Now your resource may be blocked.
 ## Configuration
 
-![preview](./screenshots/lock.png)
+![preview](../screenshots/lock.png)
 
 ##### The time when the resource was blocked.
 By default, the resource will be blocked for 10 minutes, or until it is saved, whichever comes first.
@@ -97,7 +97,7 @@ By default, when you click the Back button in the modal window of a blocked reso
 
 By default, the index page of the resource displays information that access to the resource has been blocked by another user. This is displayed as a special icon:
 
-![preview](./screenshots/indexInfo.png)
+![preview](../screenshots/indexInfo.png)
 
 To control this behavior, you can change the `resource_lock_to_index_page` parameter in the configuration file `config/resource-lock.php `.
 
@@ -107,7 +107,7 @@ To control this behavior, you can change the `resource_lock_to_index_page` param
 ## Displaying all locks
 In this package, you can configure the display of all blocked resources. 
 
-![preview](./screenshots/lockResource.png)
+![preview](../screenshots/lockResource.png)
 
 The name of the resource to use in the MoonShine admin panel menu: 
 
