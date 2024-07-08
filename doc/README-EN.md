@@ -1,11 +1,12 @@
 # Blocking resources
-[![Software License][ico-license]](LICENSE)
-
-[![Laravel][ico-laravel]](Laravel) [![PHP][ico-php]](PHP) 
+[![Latest Stable Version](https://img.shields.io/packagist/v/forest-lynx/moonshine-resource-lock)](https://github.com/forest-lynx/moonshine-resource-lock)
+[![Total Downloads](https://img.shields.io/packagist/dt/forest-lynx/moonshine-resource-lock)](https://github.com/forest-lynx/moonshine-resource-lock) 
+[![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](LICENSE)\
+[![Laravel](https://img.shields.io/badge/Laravel-11+-FF2D20?style=for-the-badge&logo=laravel)](Laravel) 
+[![PHP](https://img.shields.io/badge/PHP-8.2+-777BB4?style=for-the-badge&logo=php)](PHP) 
+[![PHP](https://img.shields.io/badge/Moonshine-2.18+-1B253B?style=for-the-badge)](https://github.com/moonshine-software/moonshine)
 
 Adds the resource blocking feature to the MoonShine admin panel. When a user edits an entry, the resource is blocked so that other users cannot make changes at the same time.
-> [!CAUTION]
-> MoonShine version must be at least 2.18.0
 ## Content
 * [Installation](#installation)
 * [Usage](#usage)
@@ -45,7 +46,7 @@ class PostResource extends ModelResource
 Now your resource may be blocked.
 ## Configuration
 
-![preview](./screenshots/lock.png)
+![preview](../screenshots/lock.png)
 
 ##### The time when the resource was blocked.
 By default, the resource will be blocked for 10 minutes, or until it is saved, whichever comes first.
@@ -96,7 +97,7 @@ By default, when you click the Back button in the modal window of a blocked reso
 
 By default, the index page of the resource displays information that access to the resource has been blocked by another user. This is displayed as a special icon:
 
-![preview](./screenshots/indexInfo.png)
+![preview](../screenshots/indexInfo.png)
 
 To control this behavior, you can change the `resource_lock_to_index_page` parameter in the configuration file `config/resource-lock.php `.
 
@@ -106,7 +107,7 @@ To control this behavior, you can change the `resource_lock_to_index_page` param
 ## Displaying all locks
 In this package, you can configure the display of all blocked resources. 
 
-![preview](./screenshots/lockResource.png)
+![preview](../screenshots/lockResource.png)
 
 The name of the resource to use in the MoonShine admin panel menu: 
 
@@ -137,8 +138,3 @@ php artisan vendor:publish --tag=resource-lock-lang
 ```
 ## License
 [MIT License](LICENSE).
-
-
-[ico-license]: https://img.shields.io/badge/license-MIT-brightgreen.svg
-[ico-laravel]: https://img.shields.io/badge/Laravel-11+-FF2D20?style=for-the-badge&logo=laravel
-[ico-php]: https://img.shields.io/badge/PHP-8.2+-777BB4?style=for-the-badge&logo=php
