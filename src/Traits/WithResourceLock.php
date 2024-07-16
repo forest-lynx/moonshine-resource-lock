@@ -128,7 +128,7 @@ trait WithResourceLock
 
     protected function afterUpdated(Model $item): Model
     {
-        $this->modelLock->unlock();
+        ModelRelatedLock::make($item)->unlock();
         return parent::afterUpdated($item);
     }
 
