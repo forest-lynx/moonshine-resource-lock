@@ -25,7 +25,7 @@
         }
     },
     "conflict": {
-        "moonshine/moonshine": "<2.18"
+        "moonshine/moonshine": "<3.0"
     },
     "scripts": {
     },
