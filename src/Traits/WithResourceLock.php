@@ -13,12 +13,14 @@ use Illuminate\Database\Eloquent\Model;
 use MoonShine\ActionButtons\ActionButton;
 use ForestLynx\MoonShine\Components\Modal;
 use ForestLynx\MoonShine\Services\ModelRelatedLock;
+use MoonShine\Enums\Layer;
+use MoonShine\Enums\PageType;
 
 trait WithResourceLock
 {
     //TODO контроль при редактировании в таблице в режиме updateOnPreview()
     //TODO поддержка карточек товара на индексной странице
-    protected ?ModelRelatedLock $modelLock = null;
+    //TODO разблокировка ресурса при закрытии вкладки или переходе на другую страницу
 
     protected function bootWithResourceLock(): void
     {
@@ -31,6 +33,40 @@ trait WithResourceLock
         if ($this->isNowOnUpdateForm()) {
             $this->handleUpdateForm();
         }
+    }
+
+    public function getIndexItemButtons(): array
+    {
+        return [
+            ...$this->getIndexButtons(),
+            $this->getDetailButton(
+                isAsync: $this->isAsync()
+            ),
+            $this->getEditButton(
+                isAsync: $this->isAsync()
+            )->canSee(fn(Model $item, $b): bool => !ModelRelatedLock::make($item)->isLocked()),
+            $this->getDeleteButton(
+                redirectAfterDelete: $this->redirectAfterDelete(),
+                isAsync: $this->isAsync()
+            )->canSee(fn(Model $item, $b): bool => !ModelRelatedLock::make($item)->isLocked()),
+            $this->getPreviewButton(),
+            $this->getMassDeleteButton(
+                redirectAfterDelete: $this->redirectAfterDelete(),
+                isAsync: $this->isAsync()
+            ),
+        ];
+    }
+
+    protected function getPreviewButton(): ActionButton
+    {
+        return ActionButton::make('', '#')
+                ->canSee(fn(Model $item, $b): bool => ModelRelatedLock::make($item)->isLocked())
+                ->inModal(
+                    title: static fn () => __('resource-lock::ui.title'),
+                    content: fn() => $this->getPreview()
+                )
+                ->warning()
+                ->icon('heroicons.outline.lock-closed');
     }
 
     protected function handleIndexPage(): void
@@ -66,37 +102,33 @@ trait WithResourceLock
 
     protected function handleUpdateForm(): void
     {
-        $this->modelLock = ModelRelatedLock::make($this->getItem());
-        if ($this->modelLock->isLocked()) {
+        $modelLock = ModelRelatedLock::make($this->getItem());
+        if ($modelLock->isLocked()) {
             $this->handleLockedResource();
         }
-        if (!$this->modelLock->isResourceLock()) {
-            $this->modelLock->lock();
+        if (!$modelLock->isResourceLock()) {
+            $modelLock->lock();
         }
     }
 
     protected function handleLockedResource(): void
     {
-        $this->formPage()
-            ->getComponents()
-            ->map(function ($component) {
-                if ($component instanceof Fragment && $component->componentName === 'crud-form') {
-                    $fields = $this->isEditInModal()
-                        ? [$this->getPreview()->badge('red')]
-                        : [
-                            ...$component->getFields(),
-                            $this->getModal()
-                        ];
-                    $component->fields($fields);
-                }
-            });
+        $this->getPages()
+            ->findByType(PageType::FORM)
+            ->pushToLayer(
+                Layer::BOTTOM,
+                $this->getModal()
+            );
     }
 
     protected function getResourceLockOwner(): ?string
     {
+        if (!$this?->getItem()) {
+            return null;
+        }
         if (config('resource-lock.show_owner_modal')) {
             return app(config('resource-lock.resource_lock_owner'))
-            ->execute($this->modelLock->getResourceLockOwner());
+            ->execute(ModelRelatedLock::make($this->getItem())->getResourceLockOwner());
         }
     }
 
