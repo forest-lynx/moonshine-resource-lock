@@ -7,6 +7,10 @@
 [![PHP](https://img.shields.io/badge/Moonshine-2.18+-1B253B?style=for-the-badge)](https://github.com/moonshine-software/moonshine)
 
 Adds the resource blocking feature to the MoonShine admin panel. When a user edits an entry, the resource is blocked so that other users cannot make changes at the same time.
+| Package version | MoonShine admin panel Version |
+|:---:|:---:|
+| ^1.x | ^2.18.0 |
+| ^2.x | ^3.x |
 ## Content
 * [Installation](#installation)
 * [Usage](#usage)
