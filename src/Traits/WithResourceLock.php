@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace ForestLynx\MoonShine\Traits;
 
-use MoonShine\Fields\Preview;
-use MoonShine\Decorations\Flex;
-use MoonShine\Decorations\Fragment;
-use MoonShine\Pages\PageComponents;
-use MoonShine\Components\TableBuilder;
+use MoonShine\UI\Fields\Preview;
+use MoonShine\Support\Enums\Layer;
 use Illuminate\Database\Eloquent\Model;
-use MoonShine\ActionButtons\ActionButton;
+use MoonShine\UI\Components\Layout\Flex;
+use MoonShine\UI\Components\ActionButton;
 use ForestLynx\MoonShine\Components\Modal;
+use MoonShine\Laravel\Components\Fragment;
+use MoonShine\UI\Components\Table\TableBuilder;
 use ForestLynx\MoonShine\Services\ModelRelatedLock;
-use MoonShine\Enums\Layer;
-use MoonShine\Enums\PageType;
+use MoonShine\Laravel\Collections\Fields;
+use MoonShine\UI\Collections\ActionButtons;
 
 trait WithResourceLock
 {
@@ -24,58 +24,22 @@ trait WithResourceLock
 
     protected function bootWithResourceLock(): void
     {
-        if (
-            $this->isNowOnIndex()
-            && $this->isDisplayOnIndexPage()
-        ) {
-            $this->handleIndexPage();
-        }
-        if ($this->isNowOnUpdateForm()) {
+        if ($this->getFormPage()) {
             $this->handleUpdateForm();
         }
-    }
 
-    public function getIndexItemButtons(): array
-    {
-        return [
-            ...$this->getIndexButtons(),
-            $this->getDetailButton(
-                isAsync: $this->isAsync()
-            ),
-            $this->getEditButton(
-                isAsync: $this->isAsync()
-            )->canSee(fn(Model $item, $b): bool => !ModelRelatedLock::make($item)->isLocked()),
-            $this->getDeleteButton(
-                redirectAfterDelete: $this->redirectAfterDelete(),
-                isAsync: $this->isAsync()
-            )->canSee(fn(Model $item, $b): bool => !ModelRelatedLock::make($item)->isLocked()),
-            $this->getPreviewButton(),
-            $this->getMassDeleteButton(
-                redirectAfterDelete: $this->redirectAfterDelete(),
-                isAsync: $this->isAsync()
-            ),
-        ];
-    }
-
-    protected function getPreviewButton(): ActionButton
-    {
-        return ActionButton::make('', '#')
-                ->canSee(fn(Model $item, $b): bool => ModelRelatedLock::make($item)->isLocked())
-                ->inModal(
-                    title: static fn () => __('resource-lock::ui.title'),
-                    content: fn() => $this->getPreview()
-                )
-                ->warning()
-                ->icon('heroicons.outline.lock-closed');
+        if ($this->isDisplayOnIndexPage()) {
+            $this->handleIndexPage();
+        }
     }
 
     protected function handleIndexPage(): void
     {
-        $this->indexPage()
+        $this->getIndexPage()
         ->getComponents()
         ->map(
             function ($component) {
-                if ($component instanceof Fragment && $component->componentName === 'crud-list') {
+                if ($component instanceof Fragment && $component->getName() === 'crud-list') {
                     $this->addResourceLockColumnToTable($component);
                 }
             }
@@ -84,67 +48,90 @@ trait WithResourceLock
 
     protected function addResourceLockColumnToTable($component): void
     {
-        $component->getFields()->each(
+        $component->getComponents()->each(
             function ($index) {
                 if ($index instanceof TableBuilder) {
-                    $index->fields([
-                        ...$index->getFields(),
-                        Preview::make(
-                            label: __('resource-lock::ui.table_title'),
-                            column: 'resourceLock.id',
-                            formatted: fn($item): bool => !ModelRelatedLock::make($item)->isLocked()
-                        )->boolean()
-                    ]);
+                    $index->buttons($this->transformRowButtons($this->getIndexButtons()));
+                    $index->fields($this->transformFields($index->getFields()));
                 }
             }
         );
     }
 
+    protected function transformRowButtons(ActionButtons $buttons): ActionButtons
+    {
+        $buttons->each(
+            fn(ActionButton $btn): ActionButton =>
+            $btn->getName() === 'edit-button' || $btn->getName() === 'delete-button'
+            ? $btn->canSee(fn(Model $item, $b): bool => !ModelRelatedLock::make($item)->isLocked())
+            : $btn
+        );
+        $buttons->add(
+            ActionButton::make('', '#')
+                ->canSee(fn(Model $item, $b): bool => ModelRelatedLock::make($item)->isLocked())
+                ->inModal(
+                    title: static fn () => __('resource-lock::ui.title'),
+                    content: fn() => $this->getPreview()
+                )
+                ->warning()
+                ->icon('lock-closed')
+        );
+
+        return $buttons;
+    }
+
+    protected function transformFields(Fields $fields): Fields
+    {
+        return $fields->add(Preview::make(
+            label: __('resource-lock::ui.table_title'),
+            column: 'resourceLock.id',
+            formatted: fn(Model $item): bool => !ModelRelatedLock::make($item)->isLocked()
+        )->boolean());
+    }
+
     protected function handleUpdateForm(): void
     {
-        $modelLock = ModelRelatedLock::make($this->getItem());
-        if ($modelLock->isLocked()) {
-            $this->handleLockedResource();
-        }
-        if (!$modelLock->isResourceLock()) {
-            $modelLock->lock();
+        if ($this?->getItem()) {
+            $modelLock = ModelRelatedLock::make($this->getItem());
+            if ($modelLock->isLocked()) {
+                $this->handleLockedResource();
+            }
+            if (!$modelLock->isResourceLock()) {
+                $modelLock->lock();
+            }
         }
     }
 
     protected function handleLockedResource(): void
     {
-        $this->getPages()
-            ->findByType(PageType::FORM)
-            ->pushToLayer(
-                Layer::BOTTOM,
-                $this->getModal()
-            );
+        $this->getFormPage()->pushToLayer(
+            Layer::BOTTOM,
+            $this->getModal()
+        );
     }
 
     protected function getResourceLockOwner(): ?string
     {
-        if (!$this?->getItem()) {
-            return null;
-        }
         if (config('resource-lock.show_owner_modal')) {
             return app(config('resource-lock.resource_lock_owner'))
             ->execute(ModelRelatedLock::make($this->getItem())->getResourceLockOwner());
         }
+        return null;
     }
 
     protected function getModal(): Modal
     {
         return Modal::make(
             title: static fn () => __('resource-lock::ui.title'),
-            components: PageComponents::make([
-            $this->getPreview(),
-            Flex::make([
-                ActionButton::make(
-                    label: __('resource-lock::ui.back_btn'),
-                    url: $this->getReturnUrlResourceLock(),
-                )->info()->icon('heroicons.outline.arrow-uturn-left')
-            ])->justifyAlign('start')->itemsAlign('start')
-            ])
+            components: [
+                $this->getPreview(),
+                Flex::make([
+                    ActionButton::make(
+                        label: __('resource-lock::ui.back_btn'),
+                        url: $this->getReturnUrlResourceLock(),
+                    )->info()->icon('arrow-uturn-left')
+                ])->justifyAlign('start')->itemsAlign('start')
+            ]
         )->name('resource-lock-modal');
     }
 
@@ -158,15 +145,17 @@ trait WithResourceLock
         )->customAttributes(['class' => 'mb-4']);
     }
 
-    protected function afterUpdated(Model $item): Model
+    protected function afterUpdated(mixed $item): mixed
     {
-        ModelRelatedLock::make($item)->unlock();
+        if ($item instanceof Model) {
+            ModelRelatedLock::make($item)->unlock();
+        }
         return parent::afterUpdated($item);
     }
 
     protected function getReturnUrlResourceLock(): string
     {
-        return $this->indexPageUrl();
+        return $this->getIndexPageUrl();
     }
 
     protected function isDisplayOnIndexPage(): bool

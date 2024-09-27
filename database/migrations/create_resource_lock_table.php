@@ -3,13 +3,14 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use MoonShine\Laravel\MoonShineAuth;
 
 return new class extends Migration {
     public function up(): void
     {
         Schema::create('resource_locks', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained();
+            $table->foreignIdFor(MoonShineAuth::getProvider()->getModel())->constrained()->cascadeOnDelete();
             $table->morphs('lockable');
             $table->timestamp('locking_at');
             $table->timestamp('expired_at');

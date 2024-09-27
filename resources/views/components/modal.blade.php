@@ -27,7 +27,7 @@
                     <div class="modal-content">
                         <div class="modal-header bgc-error">
                             <x-moonshine::icon
-                                icon="heroicons.outline.lock-closed"
+                                icon="lock-closed"
                                 size="6"
                             />
                             <h5 class="modal-title grow">

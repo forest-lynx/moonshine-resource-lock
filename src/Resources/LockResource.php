@@ -4,20 +4,17 @@ declare(strict_types=1);
 
 namespace ForestLynx\MoonShine\Resources;
 
-use App\Models\Address;
-use MoonShine\Fields\ID;
-use MoonShine\Fields\Date;
-use MoonShine\Fields\Text;
-use MoonShine\Handlers\ExportHandler;
-use MoonShine\Handlers\ImportHandler;
-use MoonShine\Resources\ModelResource;
+use MoonShine\UI\Fields\ID;
+use MoonShine\UI\Fields\Date;
+use MoonShine\UI\Fields\Text;
 use Illuminate\Database\Eloquent\Model;
+use MoonShine\Laravel\QueryTags\QueryTag;
 use ForestLynx\MoonShine\Models\ResourceLock;
+use MoonShine\Laravel\Resources\ModelResource;
 use Illuminate\Contracts\Database\Eloquent\Builder;
-use MoonShine\QueryTags\QueryTag;
 
 /**
- * @extends ModelResource<Address>
+ * @extends ModelResource<ResourceLock>
  */
 class LockResource extends ModelResource
 {
@@ -25,20 +22,19 @@ class LockResource extends ModelResource
 
     protected array $with = ['user'];
 
-    public function title(): string
+    public function __construct()
     {
-        return __('resource-lock::ui.lock_resource_title');
+        $this->title = __('resource-lock::ui.lock_resource_title');
     }
 
-    public function fields(): array
+    public function indexFields(): array
     {
         return [
             ID::make('id'),
             Text::make(
                 label: __('resource-lock::ui.owner'),
                 column: 'owner',
-                formatted: fn($item): string => app(config('resource-lock.resource_lock_owner'))
-                ->execute($item->user)
+                formatted: fn(Model $item): string => app(config('resource-lock.resource_lock_owner'))->execute($item->user)
             ),
             Text::make(
                 label: __('resource-lock::ui.lockable_type'),
@@ -55,7 +51,7 @@ class LockResource extends ModelResource
             Date::make(
                 label: __('resource-lock::ui.expired_at'),
                 column: 'expired_at',
-            )->badge(fn($v, $f): string => !$f->getData()->isExpired() ? 'green' : 'red')
+            )->badge(fn($v, $f): string => $f->getData()->getOriginal()->isExpired() ? 'green' : 'red')
             ->sortable(),
         ];
     }
@@ -71,31 +67,16 @@ class LockResource extends ModelResource
            QueryTag::make(
                __('resource-lock::ui.query_tag_locked'),
                fn(Builder $query) => $query->where('expired_at', '>=', date('Y-m-d H:i:s'))
-           )->icon('heroicons.outline.lock-closed'),
+           )->icon('lock-closed'),
            QueryTag::make(
                __('resource-lock::ui.query_tag_unlocked'),
                fn(Builder $query) => $query->where('expired_at', '<', date('Y-m-d H:i:s'))
-           )->icon('heroicons.outline.lock-open'),
+           )->icon('lock-open'),
         ];
     }
 
-    public function rules(Model $item): array
+    public function rules(mixed $item): array
     {
         return [];
-    }
-
-    public function search(): array
-    {
-        return [];
-    }
-
-    public function import(): ?ImportHandler
-    {
-        return null;
-    }
-
-    public function export(): ?ExportHandler
-    {
-        return null;
     }
 }

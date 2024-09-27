@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace ForestLynx\MoonShine\Services;
 
-use MoonShine\MoonShineAuth;
-use MoonShine\Traits\Makeable;
+use Illuminate\Support\Str;
+use MoonShine\Laravel\MoonShineAuth;
+use MoonShine\Support\Traits\Makeable;
 use Illuminate\Database\Eloquent\Model;
 use ForestLynx\MoonShine\Models\ResourceLock;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -20,7 +21,7 @@ final class ModelRelatedLock
 
     public function __construct(protected Model $model)
     {
-        $this->authUser = MoonShineAuth::guard()->user();
+        $this->authUser = MoonShineAuth::getGuard()->user();
         $model::resolveRelationUsing('resourceLock', function (Model $model): MorphOne {
             return $model->morphOne(ResourceLock::class, 'lockable');
         });
@@ -46,7 +47,8 @@ final class ModelRelatedLock
 
     public function isLockedByCurrentUser(): bool
     {
-        return $this->authUser->id === $this->model->resourceLock?->user_id;
+        $foreignKey = Str::singular($this->authUser->getTable()) . '_' . $this->authUser->getKeyName();
+        return $this->authUser->id === $this->model->resourceLock?->$foreignKey;
     }
 
     public function lock(): bool

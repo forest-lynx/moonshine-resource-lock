@@ -5,17 +5,15 @@ declare(strict_types=1);
 namespace ForestLynx\MoonShine\Components;
 
 use Closure;
-use MoonShine\Support\Condition;
 use Illuminate\View\ComponentSlot;
 use Illuminate\Contracts\View\View;
-use MoonShine\Components\MoonShineComponent;
-use MoonShine\Collections\MoonShineRenderElements;
-use MoonShine\Components\Components;
+use MoonShine\UI\Components\AbstractWithComponents;
+use MoonShine\UI\Components\Components;
 
 /**
- * @method static static make(Closure|string $title, Closure|View|string $content,  MoonShineRenderElements|null $components = null)
+ * @method static static make(Closure|string $title, Closure|View|string $content,  iterable $components = [])
  */
-final class Modal extends MoonShineComponent
+final class Modal extends AbstractWithComponents
 {
     protected string $view = 'moonshine-fl::components.modal';
 
@@ -26,20 +24,21 @@ final class Modal extends MoonShineComponent
     public function __construct(
         protected Closure|string $title = '',
         protected Closure|string $content = '',
-        protected ?MoonShineRenderElements $components = null
+        protected iterable $components = []
     ) {
+        parent::__construct($components);
     }
 
     public function wide(Closure|bool|null $condition = null): self
     {
-        $this->wide = is_null($condition) || Condition::boolean($condition, false);
+        $this->wide = value($condition, $this) ?? false;
 
         return $this;
     }
 
     public function auto(Closure|bool|null $condition = null): self
     {
-        $this->auto = is_null($condition) || Condition::boolean($condition, false);
+        $this->auto = value($condition, $this) ?? false;
 
         return $this;
     }
@@ -49,8 +48,9 @@ final class Modal extends MoonShineComponent
      */
     protected function viewData(): array
     {
-        $componentsHtml = $this->components?->isNotEmpty() ?
-            Components::make($this->components) : '' ;
+        $componentsHtml = $this->getComponents()->isNotEmpty()
+            ? Components::make($this->getComponents())
+            : '';
 
         return [
             'title' => value($this->title, $this),

@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace ForestLynx\MoonShine\Models;
 
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Str;
+use MoonShine\Laravel\MoonShineAuth;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class ResourceLock extends Model
 {
@@ -43,9 +45,10 @@ class ResourceLock extends Model
     }
     public function user(): BelongsTo
     {
-            $userModel = config('moonshine.auth.providers.moonshine.model');
-
-            return $this->belongsTo($userModel, 'user_id');
+        $modelUserClass = MoonShineAuth::getProvider()->getModel();
+        $userModel = MoonShineAuth::getModel();
+        $foreignKey = $userModel instanceof Model ? Str::singular($userModel->getTable()) . '_' . $userModel->getKeyName() : 'user_id';
+        return $this->belongsTo($modelUserClass, $foreignKey);
     }
 
     public function lockable(): MorphTo
