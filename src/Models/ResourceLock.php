@@ -45,7 +45,7 @@ class ResourceLock extends Model
     {
             $userModel = config('moonshine.auth.providers.moonshine.model');
 
-            return $this->belongsTo($userModel);
+            return $this->belongsTo($userModel, 'user_id');
     }
 
     public function lockable(): MorphTo
