@@ -26,6 +26,10 @@ php artisan resource-lock:install
 ```
 The command will start migrations, and will offer to publish the configuration file and language files.
 
+|Package version | Moonshine admin-panel version |
+|:---:|:---:|
+| ^1.x | ^2.18.0 |
+| ^2.x | ^3.x |
 ## Usage
 The `resource-lock` package allows you to lock a resource and prevent it from being edited by other users. Currently, the lock is applied only when editing a resource in a separate page mode.
 
