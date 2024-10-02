@@ -12,6 +12,7 @@ use MoonShine\Laravel\QueryTags\QueryTag;
 use ForestLynx\MoonShine\Models\ResourceLock;
 use MoonShine\Laravel\Resources\ModelResource;
 use Illuminate\Contracts\Database\Eloquent\Builder;
+use MoonShine\Laravel\Enums\Action;
 
 /**
  * @extends ModelResource<ResourceLock>
@@ -58,7 +59,7 @@ class LockResource extends ModelResource
 
     public function getActiveActions(): array
     {
-        return ['delete', 'massDelete'];
+        return [Action::DELETE, Action::MASS_DELETE];
     }
 
     public function queryTags(): array
