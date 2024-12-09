@@ -8,17 +8,17 @@ use MoonShine\UI\Fields\Preview;
 use MoonShine\Support\Enums\Layer;
 use Illuminate\Database\Eloquent\Model;
 use MoonShine\UI\Components\Layout\Flex;
+use MoonShine\Laravel\Collections\Fields;
 use MoonShine\UI\Components\ActionButton;
 use ForestLynx\MoonShine\Components\Modal;
 use MoonShine\Laravel\Components\Fragment;
+use MoonShine\UI\Collections\ActionButtons;
+use MoonShine\Contracts\UI\FormElementContract;
 use MoonShine\UI\Components\Table\TableBuilder;
 use ForestLynx\MoonShine\Services\ModelRelatedLock;
-use MoonShine\Laravel\Collections\Fields;
-use MoonShine\UI\Collections\ActionButtons;
 
 trait WithResourceLock
 {
-    //TODO контроль при редактировании в таблице в режиме updateOnPreview()
     //TODO поддержка карточек товара на индексной странице
     //TODO разблокировка ресурса при закрытии вкладки или переходе на другую страницу
 
@@ -36,14 +36,14 @@ trait WithResourceLock
     protected function handleIndexPage(): void
     {
         $this->getIndexPage()
-        ->getComponents()
-        ->map(
-            function ($component) {
-                if ($component instanceof Fragment && $component->getName() === 'crud-list') {
-                    $this->addResourceLockColumnToTable($component);
+            ->getComponents()
+            ->map(
+                function ($component) {
+                    if ($component instanceof Fragment && $component->getName() === 'crud-list') {
+                        $this->addResourceLockColumnToTable($component);
+                    }
                 }
-            }
-        );
+            );
     }
 
     protected function addResourceLockColumnToTable($component): void
@@ -62,7 +62,7 @@ trait WithResourceLock
     {
         $buttons->each(
             fn(ActionButton $btn): ActionButton =>
-            $btn->getName() === 'edit-button' || $btn->getName() === 'delete-button'
+            $btn->getName() === 'resource-edit-button' || $btn->getName() === 'resource-delete-button'
             ? $btn->canSee(fn(Model $item, $b): bool => !ModelRelatedLock::make($item)->isLocked())
             : $btn
         );
@@ -71,7 +71,8 @@ trait WithResourceLock
                 ->canSee(fn(Model $item, $b): bool => ModelRelatedLock::make($item)->isLocked())
                 ->inModal(
                     title: static fn () => __('resource-lock::ui.title'),
-                    content: fn() => $this->getPreview()
+                    content: fn(Model $item) => $this->getPreview($item),
+                    builder: fn($modal) => $modal->setAttribute('class', 'modal-lock')
                 )
                 ->warning()
                 ->icon('lock-closed')
@@ -82,7 +83,12 @@ trait WithResourceLock
 
     protected function transformFields(Fields $fields): Fields
     {
-        return $fields->add(Preview::make(
+        return $fields->each(
+            fn(FormElementContract $f) =>
+                (\method_exists($f, 'isUpdateOnPreview') && $f->isUpdateOnPreview())
+                ? $f->readonly(true)
+                : $f
+        )->add(Preview::make(
             label: __('resource-lock::ui.table_title'),
             column: 'resourceLock.id',
             formatted: fn(Model $item): bool => !ModelRelatedLock::make($item)->isLocked()
@@ -110,11 +116,11 @@ trait WithResourceLock
         );
     }
 
-    protected function getResourceLockOwner(): ?string
+    protected function getResourceLockOwner(?Model $item = null): ?string
     {
         if (config('resource-lock.show_owner_modal')) {
             return app(config('resource-lock.resource_lock_owner'))
-            ->execute(ModelRelatedLock::make($this->getItem())->getResourceLockOwner());
+            ->execute(ModelRelatedLock::make($this->getItem() ?? $item)->getResourceLockOwner());
         }
         return null;
     }
@@ -135,11 +141,13 @@ trait WithResourceLock
         )->name('resource-lock-modal');
     }
 
-    protected function getPreview(): Preview
+    protected function getPreview(?Model $item = null): Preview
     {
+        /** @var string $content */
         $content = config('resource-lock.show_owner_modal')
-        ? "{$this->getResourceLockOwner()} " . __('resource-lock::ui.locked_notice_user')
-        : __('resource-lock::ui.locked_notice');
+            ? "{$this->getResourceLockOwner($item)} " . __('resource-lock::ui.locked_notice_user')
+            : __('resource-lock::ui.locked_notice');
+
         return Preview::make(
             formatted: static fn(): string => $content
         )->customAttributes(['class' => 'mb-4']);

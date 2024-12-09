@@ -12,6 +12,8 @@ use MoonShine\Laravel\QueryTags\QueryTag;
 use ForestLynx\MoonShine\Models\ResourceLock;
 use MoonShine\Laravel\Resources\ModelResource;
 use Illuminate\Contracts\Database\Eloquent\Builder;
+use MoonShine\Laravel\Enums\Action;
+use MoonShine\Support\ListOf;
 
 /**
  * @extends ModelResource<ResourceLock>
@@ -56,9 +58,12 @@ class LockResource extends ModelResource
         ];
     }
 
-    public function getActiveActions(): array
+    protected function activeActions(): ListOf
     {
-        return ['delete', 'massDelete'];
+        return new ListOf(Action::class, [
+            Action::DELETE,
+            Action::MASS_DELETE,
+        ]);
     }
 
     public function queryTags(): array
