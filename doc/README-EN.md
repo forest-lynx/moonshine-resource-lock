@@ -7,6 +7,12 @@
 [![PHP](https://img.shields.io/badge/Moonshine-2.18+-1B253B?style=for-the-badge)](https://github.com/moonshine-software/moonshine)
 
 Adds the resource blocking feature to the MoonShine admin panel. When a user edits an entry, the resource is blocked so that other users cannot make changes at the same time.
+
+| Package version | MoonShine admin panel Version |
+|:---:|:---:|
+| ^1.x | ^2.18.0 |
+| ^2.x | ^3.x |
+
 ## Content
 * [Installation](#installation)
 * [Usage](#usage)
@@ -27,7 +33,7 @@ php artisan resource-lock:install
 The command will start migrations, and will offer to publish the configuration file and language files.
 
 ## Usage
-The `resource-lock` package allows you to lock a resource and prevent it from being edited by other users. Currently, the lock is applied only when editing a resource in a separate page mode.
+The `resource-lock` package allows you to lock a resource and prevent it from being edited by other users.
 
 ##### Activating a resource lock
 
@@ -131,6 +137,8 @@ class PostResource extends ModelResource
 > [!CAUTION]
 > So far, this only works for resources with display via 'TableBuilder'.
 
+> [!NOTE]
+> To prevent editing of a blocked resource, the edit and delete buttons on the main page of the resource are removed from the list of actions. Instead, a button appears that opens information about the blocked resource in a special modal window.
 ## Displaying all locks
 In this package, you can configure the display of all blocked resources. 
 
