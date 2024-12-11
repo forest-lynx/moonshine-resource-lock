@@ -17,38 +17,49 @@ final class ModelRelatedLock
     //TODO подумать о необходимости блокировки записи в базе данных
     use Makeable;
 
-    protected Model|Authenticatable $authUser;
+    private Model|Authenticatable $authUser;
+
+    private ?ResourceLock $resourceLock;
 
     public function __construct(protected Model $model)
     {
         $this->authUser = MoonShineAuth::getGuard()->user();
-        $model::resolveRelationUsing('resourceLock', function (Model $model): MorphOne {
+        $this->addRelation();
+        $this->loadResourceLock();
+    }
+
+    private function addRelation(): void
+    {
+        $this->model::resolveRelationUsing('resourceLock', function (Model $model): MorphOne {
             return $model->morphOne(ResourceLock::class, 'lockable');
         });
+    }
 
-        $model->load('resourceLock');
+    private function loadResourceLock(): void
+    {
+        $this->model->load('resourceLock');
+        $this->resourceLock = $this->model->resourceLock;
     }
 
     public function isResourceLock(): bool
     {
-        if (! $this->model->resourceLock) {
-            return false;
-        }
-
-        return $this->model->resourceLock->exists()
-            && !$this->model->resourceLock->isExpired();
+        return $this->resourceLock?->exists() && !$this->resourceLock?->isExpired();
     }
 
     public function isLocked(): bool
     {
-        return $this->isResourceLock()
-            && !$this->isLockedByCurrentUser();
+        return $this->isResourceLock() && !$this->isLockedByCurrentUser();
     }
 
     public function isLockedByCurrentUser(): bool
     {
-        $foreignKey = Str::singular($this->authUser->getTable()) . '_' . $this->authUser->getKeyName();
-        return $this->authUser->id === $this->model->resourceLock?->$foreignKey;
+        $foreignKey = $this->getForeignKeyName();
+        return $this->authUser->id === $this->resourceLock?->$foreignKey;
+    }
+
+    private function getForeignKeyName(): string
+    {
+        return Str::singular($this->authUser->getTable()) . '_' . $this->authUser->getKeyName();
     }
 
     public function lock(): bool
@@ -60,22 +71,21 @@ final class ModelRelatedLock
         $resourceLock = new ResourceLock();
         $resourceLock->lockable()->associate($this->model);
         $resourceLock->user()->associate($this->authUser);
-        $resourceLock->save();
-        return true;
+
+        return $resourceLock->save();
     }
 
     public function unlock(): bool
     {
-        if ($this->isResourceLock() && $this->isLockedByCurrentUser()) {
-            $this->model->resourceLock()->delete();
-            return true;
+        if (!$this->isResourceLock() || !$this->isLockedByCurrentUser()) {
+            return false;
         }
 
-        return false;
+        return (bool) $this->model->resourceLock()->delete();
     }
 
-    public function getResourceLockOwner(): Model
+    public function getResourceLockOwner(): ?Model
     {
-        return $this->model->resourceLock->user;
+        return $this->resourceLock?->user;
     }
 }
