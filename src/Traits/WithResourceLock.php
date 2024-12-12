@@ -8,20 +8,19 @@ use MoonShine\UI\Fields\Preview;
 use MoonShine\Support\Enums\Layer;
 use Illuminate\Database\Eloquent\Model;
 use MoonShine\UI\Components\Layout\Flex;
+use MoonShine\Laravel\Collections\Fields;
 use MoonShine\UI\Components\ActionButton;
 use ForestLynx\MoonShine\Components\Modal;
 use MoonShine\Laravel\Components\Fragment;
+use MoonShine\UI\Collections\ActionButtons;
+use MoonShine\Contracts\UI\FormElementContract;
 use MoonShine\UI\Components\Table\TableBuilder;
 use ForestLynx\MoonShine\Services\ModelRelatedLock;
-use MoonShine\Laravel\Collections\Fields;
-use MoonShine\UI\Collections\ActionButtons;
 
 trait WithResourceLock
 {
-    //TODO контроль при редактировании в таблице в режиме updateOnPreview()
     //TODO поддержка карточек товара на индексной странице
     //TODO разблокировка ресурса при закрытии вкладки или переходе на другую страницу
-
     protected function bootWithResourceLock(): void
     {
         if ($this->getFormPage()) {
@@ -36,57 +35,79 @@ trait WithResourceLock
     protected function handleIndexPage(): void
     {
         $this->getIndexPage()
-        ->getComponents()
-        ->map(
-            function ($component) {
-                if ($component instanceof Fragment && $component->getName() === 'crud-list') {
-                    $this->addResourceLockColumnToTable($component);
-                }
-            }
-        );
+            ->getComponents()
+            ->filter(fn($component) => $component instanceof Fragment && $component->getName() === 'crud-list')
+            ->each(fn($component) => $this->addResourceLockColumnToTable($component));
     }
 
     protected function addResourceLockColumnToTable($component): void
     {
-        $component->getComponents()->each(
-            function ($index) {
-                if ($index instanceof TableBuilder) {
-                    $index->buttons($this->transformRowButtons($this->getIndexButtons()));
-                    $index->fields($this->transformFields($index->getFields()));
-                }
-            }
-        );
+        $component->getComponents()
+            ->filter(fn($index) => $index instanceof TableBuilder)
+            ->each(function (TableBuilder $index) {
+                $index->buttons($this->transformRowButtons($this->getIndexButtons()));
+                $index->fields($this->transformFields($index->getFields()));
+            });
     }
 
     protected function transformRowButtons(ActionButtons $buttons): ActionButtons
     {
-        $buttons->each(
-            fn(ActionButton $btn): ActionButton =>
-            $btn->getName() === 'edit-button' || $btn->getName() === 'delete-button'
-            ? $btn->canSee(fn(Model $item, $b): bool => !ModelRelatedLock::make($item)->isLocked())
-            : $btn
-        );
-        $buttons->add(
-            ActionButton::make('', '#')
-                ->canSee(fn(Model $item, $b): bool => ModelRelatedLock::make($item)->isLocked())
-                ->inModal(
-                    title: static fn () => __('resource-lock::ui.title'),
-                    content: fn() => $this->getPreview()
-                )
-                ->warning()
-                ->icon('lock-closed')
-        );
+        $buttons->transform(function (ActionButton $btn): ActionButton {
+            if (in_array($btn->getName(), ['resource-edit-button', 'resource-delete-button'])) {
+                return $btn->canSee(fn(Model $item): bool => !ModelRelatedLock::make($item)->isLocked());
+            }
+            return $btn;
+        });
+
+        $buttons->add($this->buttonInfo());
 
         return $buttons;
     }
 
+    protected function buttonInfo(): ActionButton
+    {
+        return ActionButton::make('', '#')
+            ->canSee(fn(Model $item): bool => ModelRelatedLock::make($item)->isLocked())
+            ->inModal(
+                title: static fn () => __('resource-lock::ui.title'),
+                content: fn(Model $item) => $this->getPreview($item),
+            )
+            ->warning()
+            ->icon('lock-closed');
+    }
+
     protected function transformFields(Fields $fields): Fields
     {
-        return $fields->add(Preview::make(
+        return $fields->transform(fn (FormElementContract $field): FormElementContract =>
+                ($this->needsTransform($field))
+                ? $this->transformField($field)
+                : $field)
+            ->add($this->addStatusField());
+    }
+
+    private function needsTransform(FormElementContract $field): bool
+    {
+        return method_exists($field, 'isUpdateOnPreview') && $field->isUpdateOnPreview();
+    }
+
+    private function transformField(FormElementContract $field): FormElementContract
+    {
+        return $field->onBeforeRender(function (FormElementContract $f) {
+            $originalData = $f->getData()?->getOriginal();
+            if ($originalData && ModelRelatedLock::make($originalData)?->isResourceLock()) {
+                return $f->readonly(condition: true);
+            }
+            return $f;
+        });
+    }
+
+    private function addStatusField(): Preview
+    {
+        return Preview::make(
             label: __('resource-lock::ui.table_title'),
             column: 'resourceLock.id',
             formatted: fn(Model $item): bool => !ModelRelatedLock::make($item)->isLocked()
-        )->boolean());
+        )->boolean();
     }
 
     protected function handleUpdateForm(): void
@@ -110,11 +131,11 @@ trait WithResourceLock
         );
     }
 
-    protected function getResourceLockOwner(): ?string
+    protected function getResourceLockOwner(?Model $item = null): ?string
     {
         if (config('resource-lock.show_owner_modal')) {
             return app(config('resource-lock.resource_lock_owner'))
-            ->execute(ModelRelatedLock::make($this->getItem())->getResourceLockOwner());
+            ->execute(ModelRelatedLock::make($this->getItem() ?? $item)->getResourceLockOwner());
         }
         return null;
     }
@@ -135,11 +156,13 @@ trait WithResourceLock
         )->name('resource-lock-modal');
     }
 
-    protected function getPreview(): Preview
+    protected function getPreview(?Model $item = null): Preview
     {
+        /** @var string $content */
         $content = config('resource-lock.show_owner_modal')
-        ? "{$this->getResourceLockOwner()} " . __('resource-lock::ui.locked_notice_user')
-        : __('resource-lock::ui.locked_notice');
+            ? "{$this->getResourceLockOwner($item)} " . __('resource-lock::ui.locked_notice_user')
+            : __('resource-lock::ui.locked_notice');
+
         return Preview::make(
             formatted: static fn(): string => $content
         )->customAttributes(['class' => 'mb-4']);
@@ -160,7 +183,6 @@ trait WithResourceLock
 
     protected function isDisplayOnIndexPage(): bool
     {
-        $config = config('resource-lock.resource_lock_to_index_page') ?? null;
-        return isset($config) ? $config : true;
+        return config('resource-lock.resource_lock_to_index_page') ?? true;
     }
 }

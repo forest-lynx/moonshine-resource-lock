@@ -5,15 +5,17 @@ declare(strict_types=1);
 namespace ForestLynx\MoonShine\Resources;
 
 use MoonShine\UI\Fields\ID;
+use MoonShine\Support\ListOf;
 use MoonShine\UI\Fields\Date;
 use MoonShine\UI\Fields\Text;
+use MoonShine\Laravel\Enums\Action;
 use Illuminate\Database\Eloquent\Model;
 use MoonShine\Laravel\QueryTags\QueryTag;
 use ForestLynx\MoonShine\Models\ResourceLock;
-use MoonShine\Laravel\Resources\ModelResource;
 use Illuminate\Contracts\Database\Eloquent\Builder;
-use MoonShine\Laravel\Enums\Action;
-use MoonShine\Support\ListOf;
+use MoonShine\Contracts\Core\DependencyInjection\CoreContract;
+use MoonShine\Laravel\Resources\ModelResource;
+use MoonShine\Contracts\UI\FieldContract;
 
 /**
  * @extends ModelResource<ResourceLock>
@@ -21,7 +23,6 @@ use MoonShine\Support\ListOf;
 class LockResource extends ModelResource
 {
     protected string $model = ResourceLock::class;
-
     protected array $with = ['user'];
 
     public function __construct()
@@ -29,7 +30,10 @@ class LockResource extends ModelResource
         $this->title = __('resource-lock::ui.lock_resource_title');
     }
 
-    public function indexFields(): array
+     /**
+     * @return list<FieldContract>
+     */
+    protected function indexFields(): iterable
     {
         return [
             ID::make('id'),
@@ -69,14 +73,14 @@ class LockResource extends ModelResource
     public function queryTags(): array
     {
         return [
-           QueryTag::make(
-               __('resource-lock::ui.query_tag_locked'),
-               fn(Builder $query) => $query->where('expired_at', '>=', date('Y-m-d H:i:s'))
-           )->icon('lock-closed'),
-           QueryTag::make(
-               __('resource-lock::ui.query_tag_unlocked'),
-               fn(Builder $query) => $query->where('expired_at', '<', date('Y-m-d H:i:s'))
-           )->icon('lock-open'),
+            QueryTag::make(
+                __('resource-lock::ui.query_tag_locked'),
+                fn(Builder $query) => $query->where('expired_at', '>=', date('Y-m-d H:i:s'))
+            )->icon('lock-closed'),
+            QueryTag::make(
+                __('resource-lock::ui.query_tag_unlocked'),
+                fn(Builder $query) => $query->where('expired_at', '<', date('Y-m-d H:i:s'))
+            )->icon('lock-open'),
         ];
     }
 

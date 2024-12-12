@@ -4,13 +4,18 @@
 [![Latest Stable Version](https://img.shields.io/packagist/v/forest-lynx/moonshine-resource-lock)](https://github.com/forest-lynx/moonshine-resource-lock)
 [![Total Downloads](https://img.shields.io/packagist/dt/forest-lynx/moonshine-resource-lock)](https://github.com/forest-lynx/moonshine-resource-lock) 
 [![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](LICENSE)\
-[![Laravel](https://img.shields.io/badge/Laravel-11+-FF2D20?style=for-the-badge&logo=laravel)](Laravel) 
-[![PHP](https://img.shields.io/badge/PHP-8.2+-777BB4?style=for-the-badge&logo=php)](PHP) 
-[![PHP](https://img.shields.io/badge/Moonshine-2.18+-1B253B?style=for-the-badge)](https://github.com/moonshine-software/moonshine) 
+[![Laravel](https://img.shields.io/badge/Laravel-10+-FF2D20?style=for-the-badge&logo=laravel)](Laravel) 
+[![PHP](https://img.shields.io/badge/PHP-8.1+-777BB4?style=for-the-badge&logo=php)](PHP) 
+[![PHP](https://img.shields.io/badge/Moonshine-3.0+-1B253B?style=for-the-badge)](https://github.com/moonshine-software/moonshine) 
 
 Documentation in [English](./doc/README-EN.md)
 
 Добавляет функцию блокировки ресурсов в административную панель MoonShine. Когда пользователь редактирует запись, ресурс блокируется, чтобы другие пользователи не могли одновременно вносить изменения.
+
+|Версия пакета | Версия админ-панели MoonShine |
+|:---:|:---:|
+| ^1.x | ^2.18.0 |
+| ^2.x | ^3.x |
 
 ## Содержание
 * [Установка](#установка)
@@ -32,7 +37,7 @@ php artisan resource-lock:install
 Команда запустит миграции, и предложит опубликовать конфигурационный файл и языковые файлы.
 
 ## Использование
-Пакет `resource-lock` позволяет заблокировать ресурс и предотвратить его редактирование другими пользователями. В настоящее время блокировка применяется только при редактировании ресурса в режиме отдельной страницы.
+Пакет `resource-lock` позволяет заблокировать ресурс и предотвратить его редактирование другими пользователями.
 
 ##### Активация блокировки ресурса
 
@@ -133,6 +138,8 @@ class PostResource extends ModelResource
 > [!CAUTION]
 > Пока это работает только для ресурсов с отображением через `TableBuilder`.
 
+> [!NOTE]
+> Чтобы предотвратить редактирование заблокированного ресурса, из списка действий удаляются кнопки редактирования и удаления на главной странице ресурса. Вместо них появляется кнопка, открывающая информацию о заблокированном ресурсе в модальном окне.
 ## Отображение всех блокировок
 В этом пакете можно настроить отображение всех заблокированных ресурсов. 
 
@@ -144,7 +151,7 @@ class PostResource extends ModelResource
 
 Удаление записи приводит к разблокировке ресурса.
 
-Чтобы узнать больше о доступных вариантах отображения, обратитесь к документации административной панели [MoonShine](https://moonshine-laravel.com/docs/resource/menu/menu)
+Чтобы узнать больше о доступных вариантах отображения, обратитесь к документации административной панели Moonshine [Menu](https://moonshine-laravel.com/docs/3.x/appearance/menu) а так же [ModelResource](https://moonshine-laravel.com/docs/3.x/model-resource/index#declaring-a-section-in-the-system) 
 
 ##### Очистка от устаревших записей о блокировке ресурсов
 Для очистки таблицы базы данных от всех устаревших записей о блокировке ресурсов запустите команду:
