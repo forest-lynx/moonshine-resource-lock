@@ -94,8 +94,8 @@ trait WithResourceLock
     {
         return $field->onBeforeRender(function (FormElementContract $f) {
             $originalData = $f->getData()?->getOriginal();
-            if ($originalData && ModelRelatedLock::make($originalData)?->isResourceLock()) {
-                return $f->readonly(condition: true);
+            if ($originalData && ModelRelatedLock::make($originalData)?->isLocked()) {
+                return $f->disableUpdateOnPreview();
             }
             return $f;
         });
