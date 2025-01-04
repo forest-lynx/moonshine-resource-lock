@@ -59,7 +59,11 @@ final class ModelRelatedLock
 
     private function getForeignKeyName(): string
     {
-        return Str::singular($this->authUser->getTable()) . '_' . $this->authUser->getKeyName();
+        return \sprintf(
+            "%s_%s",
+            Str::singular($this->authUser->getTable()),
+            $this->authUser->getKeyName()
+        );
     }
 
     public function lock(): bool
