@@ -8,7 +8,7 @@
 [![PHP](https://img.shields.io/badge/PHP-8.1+-777BB4?style=for-the-badge&logo=php)](PHP) 
 [![PHP](https://img.shields.io/badge/Moonshine-3.0+-1B253B?style=for-the-badge)](https://github.com/moonshine-software/moonshine) 
 
-Documentation in [English](./doc/README-EN.md)
+Documentation in [English](https://github.com/forest-lynx/moonshine-resource-lock/blob/2.x/doc/README-EN.md)
 
 Добавляет функцию блокировки ресурсов в административную панель MoonShine. Когда пользователь редактирует запись, ресурс блокируется, чтобы другие пользователи не могли одновременно вносить изменения.
 
@@ -56,7 +56,7 @@ class PostResource extends ModelResource
 Теперь Ваш ресурс может быть заблокирован.
 ## Конфигурация
 
-![preview](./screenshots/lock.png)
+![preview](https://github.com/forest-lynx/moonshine-resource-lock/blob/2.x/screenshots/lock.png)
 
 ##### Время блокировки ресурса.
 По умолчанию ресурс будет заблокирован на 10 минут, или до момента его сохранения, в зависимости от того что наступит раньше.
@@ -115,7 +115,7 @@ class PostResource extends ModelResource
 ##### Отображение информации о заблокированном ресурсе на индексной странице
 
 На индексной странице ресурса по умолчанию отображается информация о том, что доступ к ресурсу был заблокирован другим пользователем. Это отображается в виде специального значка:
-![preview](./screenshots/indexInfo.png)
+![preview](https://github.com/forest-lynx/moonshine-resource-lock/blob/2.x/screenshots/indexInfo.png)
 
 Чтобы скрыть эту информацию на индексной странице ресурса, можно в конфигурационном файле установить для параметра `resource_lock_to_index_page` значение `false`.
 В зависимости от ваших потребностей, вы можете настроить отображение информации о заблокированном ресурсе на индексной странице ресурса с помощью объявления метода в вашем ресурсе `isDisplayOnIndexPage()`. Этот метод должен возвращать логическое значение `true` или `false`.
@@ -143,7 +143,7 @@ class PostResource extends ModelResource
 ## Отображение всех блокировок
 В этом пакете можно настроить отображение всех заблокированных ресурсов. 
 
-![preview](./screenshots/lockResource.png)
+![preview](https://github.com/forest-lynx/moonshine-resource-lock/blob/2.x/screenshots/lockResource.png)
 
 Название ресурса для использования в меню административной панели MoonShine: 
 
