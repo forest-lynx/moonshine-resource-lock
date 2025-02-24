@@ -1,3 +1,8 @@
+ <!--
+title: MoonShine Recource Lock
+versions: 2,3
+image: https://github.com/forest-lynx/moonshine-resource-lock/blob/2.x/screenshots/lock.png
+-->
  # Блокировка ресурсов
 
 
